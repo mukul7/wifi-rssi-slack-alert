@@ -103,6 +103,7 @@ class RSSIApp(object):
                 self.notify_bad_connection(strength)
 
         except Exception as error:
+            self.app.title = '🏴‍☠️'
             print(error)
 
     def run(self):
