@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: wifi-rssi-slack-alert
+Version: 0.1
+Summary: Notifies to slack when RSSI goes below certain limit.
+Home-page: https://github.com/mukul7/wifi-rssi-slack-alert
+Author: mukulpahwa
+Author-email: mukulpahwa504@gmail.com
+License: UNKNOWN
+Platform: UNKNOWN
+
+UNKNOWN
+

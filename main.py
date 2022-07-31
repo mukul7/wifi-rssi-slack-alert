@@ -1,14 +1,23 @@
 import os
+import pickle
 
 import requests as requests
+import rumps as rumps
 
-bad_rssi_limit = -30
-url = 'https://hooks.slack.com/services/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'
+from setinterval import SetInterval
+
+CONFIGURATION = os.path.join(os.getcwd(), 'config/configuration')
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+def update_configuration(key, value):
+    try:
+        with open(CONFIGURATION, 'rb') as config_file:
+            config_dictionary = pickle.load(config_file)
+    except Exception:
+        config_dictionary = {}
+    config_dictionary[key] = value
+    with open(CONFIGURATION, 'wb') as config_dictionary_file:
+        pickle.dump(config_dictionary, config_dictionary_file)
 
 
 def wifi_strength():
@@ -35,20 +44,64 @@ def wifi_strength():
     raise Exception("Not able to find signal strength")
 
 
-def notify_bad_connection(rssi):
-    payload = {
-        'text': 'WiFi signal strength has gone in *unreliable* region. *RSSI*: {}'.format(rssi)
-    }
-    res = requests.post(url, json=payload)
+class RSSIApp(object):
+    def __init__(self):
+        self.config = {
+            "app_name": "Pomodoro",
+            "set_url": "Set Slack Webhook Url",
+            "rssi_limit": "Set RSSI Threshold"
+        }
+        self.alert_conf = pickle.load(open(CONFIGURATION, 'rb'))
+        self.app = rumps.App(self.config["app_name"])
+        self.preference_button = rumps.MenuItem(title=self.config["set_url"], callback=self.open_webhook_setter)
+        self.limit_button = rumps.MenuItem(title=self.config["rssi_limit"], callback=self.open_rssi_limit_setter)
+
+        self.app.menu = [self.limit_button, self.preference_button]
+        SetInterval(0.5, self.start_checking)
+
+    def open_webhook_setter(self, sender):
+        win = rumps.Window(title='Wifi RSSI Slack Alert',
+                           message="Add the webhook of channel in which you want to send alerts",
+                           default_text=self.alert_conf['url'], cancel=True)
+        response = win.run()
+        if response.clicked == 1:
+            self.alert_conf['url'] = response.text.strip()
+            update_configuration('url', response.text.strip())
+
+    def open_rssi_limit_setter(self, sender):
+        win = rumps.Window(title='Send Alert when RSSI drops below', message='The app will send a alert on slack if '
+                                                                             'the rssi drops below the given. This '
+                                                                             'should always be within range of 0 to '
+                                                                             '-1',
+                           default_text=self.alert_conf['bad_rssi_limit'],
+                           cancel=True)
+        response = win.run()
+        if response.clicked == 1:
+            res = int(response.text.strip())
+            if 0 >= res >= -100:
+                self.alert_conf['bad_rssi_limit'] = res
+                update_configuration('bad_rssi_limit', res)
+
+    def notify_bad_connection(self, rssi):
+        payload = {
+            'text': 'WiFi signal strength has gone in *unreliable* region. *RSSI*: {}'.format(rssi)
+        }
+        res = requests.post(self.alert_conf['url'], json=payload)
+
+    def start_checking(self):
+        try:
+            strength = wifi_strength()
+            self.app.title = str(strength)
+            if strength < self.alert_conf['bad_rssi_limit']:
+                self.notify_bad_connection(strength)
+
+        except Exception as error:
+            print(error)
+
+    def run(self):
+        self.app.run()
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-
-    try:
-        strength = wifi_strength()
-        if strength < bad_rssi_limit:
-            notify_bad_connection(strength)
-
-    except Exception as error:
-        print(error)
+    app = RSSIApp()
+    app.run()

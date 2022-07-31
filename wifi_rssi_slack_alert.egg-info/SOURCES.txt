@@ -1,0 +1,6 @@
+main.py
+setup.py
+wifi_rssi_slack_alert.egg-info/PKG-INFO
+wifi_rssi_slack_alert.egg-info/SOURCES.txt
+wifi_rssi_slack_alert.egg-info/dependency_links.txt
+wifi_rssi_slack_alert.egg-info/top_level.txt
