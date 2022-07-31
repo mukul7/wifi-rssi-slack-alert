@@ -1,11 +1,8 @@
 import os
 import pickle
-import sys
 
 import requests as requests
 import rumps as rumps
-import threading
-import time
 from setinterval import SetInterval
 
 CONFIGURATION = os.path.join('config', 'configuration')
@@ -93,7 +90,7 @@ class RSSIApp(object):
         payload = {
             'text': 'WiFi signal strength has gone in *unreliable* region. *RSSI*: {}'.format(rssi)
         }
-        res = requests.post(self.alert_conf['url'], json=payload)
+        requests.post(self.alert_conf['url'], json=payload)
 
     def start_checking(self):
         try:
@@ -104,6 +101,7 @@ class RSSIApp(object):
 
         except Exception as error:
             self.app.title = '🏴‍☠️'
+
             print(error)
 
     def run(self):
