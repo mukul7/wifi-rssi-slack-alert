@@ -3,10 +3,14 @@ import pickle
 
 import requests as requests
 import rumps as rumps
-
 from setinterval import SetInterval
 
-CONFIGURATION = os.path.join(os.getcwd(), 'config/configuration')
+CONFIGURATION = os.path.join('config', 'configuration')
+
+# def resource_path(relative):
+#     if hasattr(sys, "_MEIPASS"):
+#         return os.path.join(sys._MEIPASS, relative)
+#     return os.path.join(relative)
 
 
 def update_configuration(key, value):
@@ -47,7 +51,7 @@ def wifi_strength():
 class RSSIApp(object):
     def __init__(self):
         self.config = {
-            "app_name": "Pomodoro",
+            "app_name": "Wifi RSSI Slack Alert",
             "set_url": "Set Slack Webhook Url",
             "rssi_limit": "Set RSSI Threshold"
         }
@@ -86,7 +90,7 @@ class RSSIApp(object):
         payload = {
             'text': 'WiFi signal strength has gone in *unreliable* region. *RSSI*: {}'.format(rssi)
         }
-        res = requests.post(self.alert_conf['url'], json=payload)
+        requests.post(self.alert_conf['url'], json=payload)
 
     def start_checking(self):
         try:
@@ -105,3 +109,8 @@ class RSSIApp(object):
 if __name__ == '__main__':
     app = RSSIApp()
     app.run()
+
+
+
+
+
