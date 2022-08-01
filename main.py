@@ -7,6 +7,7 @@ from setinterval import SetInterval
 
 CONFIGURATION = os.path.join('config', 'configuration')
 
+
 # def resource_path(relative):
 #     if hasattr(sys, "_MEIPASS"):
 #         return os.path.join(sys._MEIPASS, relative)
@@ -59,7 +60,7 @@ class RSSIApp(object):
         self.app = rumps.App(self.config["app_name"])
         self.preference_button = rumps.MenuItem(title=self.config["set_url"], callback=self.open_webhook_setter)
         self.limit_button = rumps.MenuItem(title=self.config["rssi_limit"], callback=self.open_rssi_limit_setter)
-
+        self.last_status = None
         self.app.menu = [self.limit_button, self.preference_button]
         SetInterval(0.5, self.start_checking)
 
@@ -88,17 +89,30 @@ class RSSIApp(object):
 
     def notify_bad_connection(self, rssi):
         payload = {
-            'text': 'WiFi signal strength has gone in *unreliable* region. *RSSI*: {}'.format(rssi)
+            'text': 'WiFi signal strength is in *unreliable* region. *RSSI*: {}'.format(rssi) + ' 👎'
+        }
+
+        requests.post(self.alert_conf['url'], json=payload)
+        print("sent bad notification")
+
+    def notify_good_connection(self, rssi):
+        payload = {
+            'text': 'WiFi signal strength is in *reliable* region. *RSSI*: {}'.format(rssi) + ' 👍'
         }
         requests.post(self.alert_conf['url'], json=payload)
+        print("sent good notification")
 
     def start_checking(self):
         try:
             strength = wifi_strength()
             self.app.title = str(strength)
-            if strength < self.alert_conf['bad_rssi_limit']:
+            if strength < self.alert_conf['bad_rssi_limit'] and (self.last_status is True or self.last_status is None):
+                self.last_status = False
                 self.notify_bad_connection(strength)
-
+            elif strength >= self.alert_conf['bad_rssi_limit'] and (
+                    self.last_status is False or self.last_status is None):
+                self.last_status = True
+                self.notify_good_connection(strength)
         except Exception as error:
             self.app.title = '🏴‍☠️'
             print(error)
@@ -110,8 +124,3 @@ class RSSIApp(object):
 if __name__ == '__main__':
     app = RSSIApp()
     app.run()
-
-
-
-
-
